@@ -16,6 +16,7 @@ class Role(str, Enum):
 
 class User(Base):
     __tablename__ = "users"
+
     id: Mapped[str] = mapped_column(
         String, primary_key=True, default=lambda: str(uuid4())
     )
@@ -23,41 +24,53 @@ class User(Base):
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String, nullable=False)
 
-    sessions: Mapped[list["ResearchSession"]] = relationship(
+    chats: Mapped[list["Chat"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
+    )
+
+
+class Chat(Base):
+    __tablename__ = "chats"
+
+    id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: str(uuid4())
+    )
+
+    title: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+    )
+
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now(UTC), onupdate=datetime.now(UTC)
+    )
+
+    user: Mapped["User"] = relationship(back_populates="chats")
+
+    messages: Mapped[list["Message"]] = relationship(
+        back_populates="chat", cascade="all, delete-orphan", passive_deletes=True
     )
 
 
 class Message(Base):
     __tablename__ = "messages"
+
     id: Mapped[str] = mapped_column(
         String, primary_key=True, default=lambda: str(uuid4())
     )
+
+    chat_id: Mapped[str] = mapped_column(ForeignKey("chats.id", ondelete="CASCADE"))
+
     role: Mapped[Role] = mapped_column(SQLEnum(Role))
 
-    content: Mapped[str] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC)
-    )
+    message: Mapped[str] = mapped_column(Text)
 
-    session_id: Mapped[str] = mapped_column(
-        ForeignKey("research_sessions.id", ondelete="CASCADE")
-    )
-    session: Mapped["ResearchSession"] = relationship(back_populates="messages")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(UTC))
 
-
-class ResearchSession(Base):
-    __tablename__ = "research_sessions"
-    id: Mapped[str] = mapped_column(
-        String, primary_key=True, default=lambda: str(uuid4())
-    )
-    title: Mapped[str] = mapped_column(String)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC)
-    )
-
-    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
-    user: Mapped["User"] = relationship(back_populates="sessions")
-    messages: Mapped[list["Message"]] = relationship(
-        back_populates="session", cascade="all, delete-orphan"
-    )
+    chat: Mapped["Chat"] = relationship(back_populates="messages")
