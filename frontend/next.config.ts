@@ -1,7 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  reactCompiler: true,
+  experimental: {
+    turbopackFileSystemCacheForDev: true,
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/api/backend/:path*",
+        destination: `${process.env.BACKEND_URL}/api/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

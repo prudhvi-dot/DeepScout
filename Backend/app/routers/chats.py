@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 router = APIRouter()
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 def create_chat(current_user: CurrentUser, db: Annotated[Session, Depends(get_db)]):
     new_chat = models.Chat(user_id=current_user.id, title="New Chat")
     db.add(new_chat)
@@ -22,7 +22,7 @@ def create_chat(current_user: CurrentUser, db: Annotated[Session, Depends(get_db
     return {"chat_id": new_chat.id}
 
 
-@router.get("/", status_code=status.HTTP_200_OK)
+@router.get("", status_code=status.HTTP_200_OK)
 def get_all_chats(current_user: CurrentUser, db: Annotated[Session, Depends(get_db)]):
     return current_user.chats
 
@@ -38,7 +38,7 @@ def get_chat_messages(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found"
         )
-    return messages
+    return {"messages": messages}
 
 
 @router.delete("/{chat_id}", status_code=status.HTTP_200_OK)
@@ -77,9 +77,11 @@ def send_message(
     chat = result.scalars().first()
 
     if not chat:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found"
-        )
+        new_chat = models.Chat(id=chat_id, user_id=current_user.id, title="New Chat")
+        db.add(new_chat)
+        db.commit()
+        db.refresh(new_chat)
+        chat = new_chat
 
     if not chat.user_id == current_user.id:
         raise HTTPException(
