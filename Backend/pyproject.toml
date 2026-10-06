@@ -1,0 +1,21 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.142.2",
+    "langchain>=1.4.3",
+    "langchain-community>=0.4.2",
+    "langchain-openai>=1.6.7",
+    "langchain-tavily>=0.2.18",
+    "langgraph>=1.2.13",
+    "langgraph-checkpoint-postgres>=3.1.2",
+    "psycopg[binary,pool]>=3.3.6",
+    "pwdlib[argon2]>=0.3.1",
+    "pydantic>=2.13.5",
+    "pydantic-settings>=2.15.0",
+    "pyjwt>=2.15.1",
+    "uvicorn[standard]>=0.54.0",
+]
