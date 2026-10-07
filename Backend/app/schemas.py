@@ -22,3 +22,9 @@ class ResearchFinding(BaseModel):
     summary: str
     key_points: list[str]
     sources: list[Source]
+
+
+class CriticResult(BaseModel):
+    sufficient: bool
+    issues: list[str]
+    missing_information: list[str]
