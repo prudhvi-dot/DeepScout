@@ -4,12 +4,12 @@ from typing import Annotated
 from app.agents.critic import Critic
 from app.agents.graph import researcher_graph
 from app.agents.planner import Planner
+from app.agents.synthesizer import Synthesizer
 from app.config.config import settings
 from app.schemas import CriticResult, ResearchFinding, ResearchTask
 from langchain_openai import ChatOpenAI
 from langgraph.constants import Send
 from langgraph.graph import END, START, StateGraph
-from app.agents.synthesizer import Synthesizer
 from typing_extensions import TypedDict
 
 
