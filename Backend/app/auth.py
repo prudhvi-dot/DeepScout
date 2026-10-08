@@ -2,13 +2,14 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 import jwt
-from app.config.config import settings
-from app.config.database import get_db
-from app.models import models
 from fastapi import Cookie, Depends, HTTPException, status
 from pwdlib import PasswordHash
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+
+from app.config.config import settings
+from app.config.database import get_db
+from app.models import models
 
 password_hash = PasswordHash.recommended()
 

@@ -1,14 +1,21 @@
-from app.agents.ResearchGraph import research_graph
+from app.routers import researches, users
+from fastapi import FastAPI
 
-final_state = research_graph.invoke(
-    {
-        "query": "What are the effects of climate change on global temperatures and extreme weather events?",
-        "iteration": 0,
-        "findings": [],
-        "critic_result": None,
-        "research_gaps": [],
-    }
-)
+# from fastapi.middleware.cors import CORSMiddleware
 
-print("Final report:")
-print(final_state["report"])
+app = FastAPI()
+
+# origins = [
+#     "https://docu-sense-2-0-wowt.vercel.app/",
+# ]
+
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=origins,
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
+
+app.include_router(users.router, prefix="/api/users", tags=["users"])
+app.include_router(researches.router, prefix="/api/researches", tags=["researches"])
