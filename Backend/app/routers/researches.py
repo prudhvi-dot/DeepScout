@@ -18,11 +18,17 @@ def get_research_sessions(
     db: Annotated[Session, Depends(get_db)],
 ):
     result = db.execute(
-        select(models.ResearchSession).where(
-            models.ResearchSession.user_id == current_user.id
-        )
+        select(
+            models.ResearchSession.id,
+            models.ResearchSession.title,
+            models.ResearchSession.query,
+            models.ResearchSession.status,
+            models.ResearchSession.created_at,
+            models.ResearchSession.updated_at,
+        ).where(models.ResearchSession.user_id == current_user.id)
     )
-    research_sessions = result.scalars().all()
+
+    research_sessions = result.mappings().all()
 
     return {"research_sessions": research_sessions}
 
@@ -108,3 +114,30 @@ def get_research_report(
     #     )
 
     return {"report": research_session}
+
+
+@router.delete("/{research_id}")
+def delete_research_session(
+    research_id: str,
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    result = db.execute(
+        select(models.ResearchSession).where(
+            models.ResearchSession.id == research_id,
+            models.ResearchSession.user_id == current_user.id,
+        )
+    )
+
+    research_session = result.scalars().first()
+
+    if not research_session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Research session not found.",
+        )
+
+    db.delete(research_session)
+    db.commit()
+
+    return {"message": "Research session deleted successfully."}
