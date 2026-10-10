@@ -33,6 +33,19 @@ def get_research_sessions(
     return {"research_sessions": research_sessions}
 
 
+import json
+import logging
+from collections.abc import Iterator
+from typing import Annotated
+
+from fastapi import Depends, Form, HTTPException, status
+from fastapi.responses import StreamingResponse
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
+
+
 @router.post("/{research_id}/research")
 def research(
     research_id: str,
@@ -40,7 +53,6 @@ def research(
     db: Annotated[Session, Depends(get_db)],
     topic: Annotated[str | None, Form()] = None,
 ):
-
     topic = (topic or "").strip()
 
     if not topic:
@@ -63,27 +75,106 @@ def research(
             id=research_id,
             user_id=current_user.id,
             query=topic,
+            title=topic,
+            status="in_progress",
         )
         db.add(research_session)
-        db.commit()
-        db.refresh(research_session)
+    else:
+        research_session.query = topic
+        research_session.title = topic
+        research_session.status = "in_progress"
 
-    result = research_graph.invoke(
-        {
-            "query": topic,
-            "iteration": 0,
-            "findings": [],
-            "critic_result": None,
-            "research_gaps": [],
-        }
-    )
-
-    research_report = result["report"]
-    research_session.report_content = research_report
-    research_session.status = "completed"
     db.commit()
+    db.refresh(research_session)
 
-    return {"Report": research_report}
+    def generate() -> Iterator[str]:
+        try:
+            yield (
+                json.dumps(
+                    {
+                        "type": "status",
+                        "message": "Research started",
+                    }
+                )
+                + "\n"
+            )
+
+            final_report = None
+
+            for chunk in research_graph.stream(
+                {
+                    "query": topic,
+                    "iteration": 0,
+                    "findings": [],
+                    "critic_result": None,
+                    "research_gaps": [],
+                },
+                stream_mode="updates",
+            ):
+                for node_name, node_output in chunk.items():
+                    yield (
+                        json.dumps(
+                            {
+                                "type": "status",
+                                "message": f"Completed step: {node_name}",
+                            }
+                        )
+                        + "\n"
+                    )
+
+                    if isinstance(node_output, dict) and node_output.get("report"):
+                        final_report = node_output["report"]
+
+            if not final_report:
+                raise RuntimeError("Research graph did not produce a report.")
+
+            research_session.report_content = final_report
+            research_session.status = "completed"
+
+            db.commit()
+
+            yield (
+                json.dumps(
+                    {
+                        "type": "final",
+                        "report": final_report,
+                    }
+                )
+                + "\n"
+            )
+
+        except Exception:
+            logger.exception(
+                "Research failed for session %s",
+                research_id,
+            )
+
+            db.rollback()
+
+            try:
+                research_session.status = "failed"
+                db.commit()
+            except Exception:
+                db.rollback()
+
+            yield (
+                json.dumps(
+                    {
+                        "type": "error",
+                        "message": "Research failed. Please try again.",
+                    }
+                )
+                + "\n"
+            )
+
+    return StreamingResponse(
+        generate(),
+        media_type="application/x-ndjson",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get("/{research_id}/report")
