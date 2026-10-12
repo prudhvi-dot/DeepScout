@@ -14,7 +14,7 @@ const Home = () => {
   const router = useRouter();
 
   function handleNewResearch() {
-    router.push(`/research/${crypto.randomUUID()}`);
+    router.push(`/research`);
     router.refresh();
   }
 
@@ -23,8 +23,8 @@ const Home = () => {
       {/* Ambient background effects */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-[-180px] h-[420px] w-[650px] -translate-x-1/2 rounded-full bg-blue-500/[0.09] blur-[120px]" />
-        <div className="absolute bottom-0 right-0 h-[300px] w-[300px] rounded-full bg-indigo-500/[0.06] blur-[100px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(oklch(0.7_0.04_250_/_0.12)_1px,transparent_1px)] [background-size:28px_28px] opacity-40" />
+        <div className="absolute bottom-0 right-0 h-[300px] w-[300px] rounded-full bg-indigo-500/6 blur-[100px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(oklch(0.7_0.04_250/0.12)_1px,transparent_1px)] [background-size:28px_28px] opacity-40" />
       </div>
 
       {/* Main content */}
@@ -49,7 +49,7 @@ const Home = () => {
           {/* Heading */}
           <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
             Research beyond
-            <span className="mt-2 block bg-gradient-to-r from-blue-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
+            <span className="mt-2 block bg-linear-to-r from-blue-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
               the obvious.
             </span>
           </h1>
@@ -73,7 +73,7 @@ const Home = () => {
 
           {/* Feature cards */}
           <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="group rounded-xl border border-white/[0.07] bg-white/[0.025] p-4 text-left transition-colors hover:border-blue-400/20 hover:bg-blue-500/[0.04]">
+            <div className="group rounded-xl border border-white/[0.07] bg-white/2.5 p-4 text-left transition-colors hover:border-blue-400/20 hover:bg-blue-500/[0.04]">
               <GlobeIcon className="mb-3 h-5 w-5 text-blue-400 transition-transform group-hover:scale-110" />
               <h2 className="text-sm font-medium text-slate-200">
                 Web intelligence
@@ -83,7 +83,7 @@ const Home = () => {
               </p>
             </div>
 
-            <div className="group rounded-xl border border-white/[0.07] bg-white/[0.025] p-4 text-left transition-colors hover:border-blue-400/20 hover:bg-blue-500/[0.04]">
+            <div className="group rounded-xl border border-white/[0.07] bg-white/2.5 p-4 text-left transition-colors hover:border-blue-400/20 hover:bg-blue-500/[0.04]">
               <SparklesIcon className="mb-3 h-5 w-5 text-indigo-400 transition-transform group-hover:scale-110" />
               <h2 className="text-sm font-medium text-slate-200">
                 Multi-agent analysis
@@ -93,7 +93,7 @@ const Home = () => {
               </p>
             </div>
 
-            <div className="group rounded-xl border border-white/[0.07] bg-white/[0.025] p-4 text-left transition-colors hover:border-blue-400/20 hover:bg-blue-500/[0.04]">
+            <div className="group rounded-xl border border-white/[0.07] bg-white/2.5 p-4 text-left transition-colors hover:border-blue-400/20 hover:bg-blue-500/[0.04]">
               <FileTextIcon className="mb-3 h-5 w-5 text-sky-400 transition-transform group-hover:scale-110" />
               <h2 className="text-sm font-medium text-slate-200">
                 Detailed reports
@@ -107,7 +107,7 @@ const Home = () => {
       </div>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-white/[0.06] px-4 py-4">
+      <footer className="relative z-10 border-t border-white/6 px-4 py-4">
         <p className="text-center text-[11px] text-slate-500">
           AI-generated research can contain errors. Verify important findings
           against the original sources.

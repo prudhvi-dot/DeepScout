@@ -1,4 +1,3 @@
-
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
@@ -9,6 +8,7 @@ import {
   AlertCircleIcon,
   SparklesIcon,
   FileTextIcon,
+  DownloadIcon,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -47,6 +47,7 @@ export default function Research({
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isPending, setIsPending] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const router = useRouter();
 
@@ -57,6 +58,39 @@ export default function Research({
   useEffect(() => {
     setCurrentReport(report ?? "");
   }, [report]);
+
+  async function handleDownloadPDF() {
+    if (isDownloading || !currentReport.trim()) {
+      return;
+    }
+
+    setErrorMessage("");
+    setIsDownloading(true);
+
+    try {
+      // Loaded on demand so the PDF library never runs during SSR.
+      // Adjust the import path if your lib folder lives elsewhere.
+      const { downloadReportPdf } = await import("../lib/report-pdf");
+
+      const filename =
+        (currentTopic || "research-report")
+          .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
+          .trim()
+          .replace(/\s+/g, "-")
+          .slice(0, 100) || "research-report";
+
+      await downloadReportPdf({
+        markdown: currentReport,
+        title: currentTopic,
+        filename,
+      });
+    } catch (error) {
+      console.error("PDF generation failed:", error);
+      setErrorMessage("Unable to generate the PDF. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -209,9 +243,9 @@ export default function Research({
       <main className="relative z-10 min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
           {currentReport ? (
-            <article className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#111B30]/90 shadow-[0_12px_50px_rgba(0,0,0,0.12)]">
+            <article className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#111B30] shadow-[0_12px_50px_rgba(0,0,0,0.12)]">
               {/* Report title bar */}
-              <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-4 sm:px-7">
+              <div className="flex flex-wrap items-center gap-3 border-b border-white/[0.07] px-5 py-4 sm:px-7">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-blue-400/15 bg-blue-500/[0.09]">
                   <BotIcon className="h-5 w-5 text-blue-400" />
                 </div>
@@ -225,7 +259,20 @@ export default function Research({
                   </p>
                 </div>
 
-                <SparklesIcon className="h-4 w-4 shrink-0 text-blue-400/70" />
+                <button
+                  type="button"
+                  onClick={handleDownloadPDF}
+                  disabled={isDownloading}
+                  className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-blue-400/20 bg-blue-500/[0.08] px-3 py-2 text-xs font-medium text-blue-200 transition-colors hover:border-blue-400/40 hover:bg-blue-500/[0.15] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isDownloading ? (
+                    <Loader2Icon className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <DownloadIcon className="h-4 w-4" />
+                  )}
+
+                  {isDownloading ? "Generating PDF..." : "Download PDF"}
+                </button>
               </div>
 
               {/* Markdown content */}
