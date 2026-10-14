@@ -92,115 +92,130 @@ export default function Research({
     }
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
 
-    const submittedTopic = question.trim();
+async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
 
-    if (!submittedTopic || isPending) return;
+  const submittedTopic = question.trim();
 
-    setErrorMessage("");
-    setStatusMessage("Starting research...");
-    setCurrentReport("");
-    setIsPending(true);
+  if (!submittedTopic || isPending) return;
 
-    if (!currentTopic) {
-      setCurrentTopic(submittedTopic);
-    }
+  setErrorMessage("");
+  setStatusMessage("Starting research...");
+  setCurrentReport("");
+  setIsPending(true);
 
-    setQuestion("");
-
-    try {
-      const formData = new FormData();
-      formData.append("topic", submittedTopic);
-
-      const response = await fetch(
-        `/api/backend/researches/${docId}/research`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-
-        console.error("Research API error:", {
-          status: response.status,
-          body: errorText,
-        });
-
-        throw new Error(`Research failed (${response.status}): ${errorText}`);
-      }
-
-      if (!response.body) {
-        throw new Error("The server did not return a readable stream.");
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-
-      let buffer = "";
-      let finalReport = "";
-
-      const processLine = (line: string) => {
-        if (!line.trim()) return;
-
-        const event = JSON.parse(line) as StreamEvent;
-
-        switch (event.type) {
-          case "status":
-            setStatusMessage(event.message);
-            break;
-
-          case "final":
-            finalReport = event.report;
-            setCurrentReport(event.report);
-            setCurrentTopic(submittedTopic);
-            setStatusMessage("");
-            break;
-
-          case "error":
-            throw new Error(event.message);
-        }
-      };
-
-      while (true) {
-        const { value, done } = await reader.read();
-
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          processLine(line);
-        }
-      }
-
-      buffer += decoder.decode();
-
-      if (buffer.trim()) {
-        processLine(buffer);
-      }
-
-      if (!finalReport) {
-        throw new Error("The stream ended without a final research report.");
-      }
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Something went wrong while researching."
-      );
-    } finally {
-      setStatusMessage("");
-      setIsPending(false);
-      router.refresh();
-    }
+  if (!currentTopic) {
+    setCurrentTopic(submittedTopic);
   }
+
+  setQuestion("");
+
+  try {
+    const formData = new FormData();
+    formData.append("topic", submittedTopic);
+
+    const response = await fetch(
+      `/api/backend/researches/${docId}/research`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    // Handle expired or invalid authentication
+    if (response.status === 401) {
+      await fetch("/api/logout", {
+      });
+
+      router.replace("/signin");
+      return;
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+
+      console.error("Research API error:", {
+        status: response.status,
+        body: errorText,
+      });
+
+      throw new Error(
+        `Research failed (${response.status}): ${errorText}`
+      );
+    }
+
+    if (!response.body) {
+      throw new Error("The server did not return a readable stream.");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    let buffer = "";
+    let finalReport = "";
+
+    const processLine = (line: string) => {
+      if (!line.trim()) return;
+
+      const event = JSON.parse(line) as StreamEvent;
+
+      switch (event.type) {
+        case "status":
+          setStatusMessage(event.message);
+          break;
+
+        case "final":
+          finalReport = event.report;
+          setCurrentReport(event.report);
+          setCurrentTopic(submittedTopic);
+          setStatusMessage("");
+          break;
+
+        case "error":
+          throw new Error(event.message);
+      }
+    };
+
+    while (true) {
+      const { value, done } = await reader.read();
+
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+
+      for (const line of lines) {
+        processLine(line);
+      }
+    }
+
+    buffer += decoder.decode();
+
+    if (buffer.trim()) {
+      processLine(buffer);
+    }
+
+    if (!finalReport) {
+      throw new Error(
+        "The stream ended without a final research report."
+      );
+    }
+  } catch (error) {
+    setErrorMessage(
+      error instanceof Error
+        ? error.message
+        : "Something went wrong while researching."
+    );
+  } finally {
+    setStatusMessage("");
+    setIsPending(false);
+    router.refresh();
+  }
+}
+
 
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden bg-[#0D1428] text-slate-100">

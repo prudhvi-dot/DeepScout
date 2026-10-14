@@ -36,8 +36,8 @@ export function SessionSidebar({
   const [error, setError] = useState<string | null>(null);
 
   function handleNewresearch() {
-    const researchId = crypto.randomUUID();
-    router.push(`/research/${researchId}`);
+    // const researchId = crypto.randomUUID();
+    router.push(`/research`);
     router.refresh();
   }
 
@@ -51,37 +51,47 @@ export function SessionSidebar({
       .toUpperCase();
   }
 
-  async function handleDeleteresearch(sessionId: string) {
-    const isCurrentresearch = pathname === `/research/${sessionId}`;
+ 
+async function handleDeleteresearch(sessionId: string) {
+  const isCurrentresearch = pathname === `/research/${sessionId}`;
 
-    setDeletingId(sessionId);
-    setError(null);
+  setDeletingId(sessionId);
+  setError(null);
 
-    try {
-      const res = await fetch(`/api/backend/researches/${sessionId}`, {
-        method: "DELETE",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
+  try {
+    const res = await fetch(`/api/backend/researches/${sessionId}`, {
+      method: "DELETE",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+    });
+
+    if (res.status === 401) {
+      await fetch("/api/logout", {
       });
 
-      if (!res.ok) {
-        setError("Failed to delete research. Please try again.");
-        return;
-      }
-
-      if (isCurrentresearch) {
-        router.push("/research");
-      }
-
-      router.refresh();
-    } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setDeletingId(null);
+      router.replace("/signin");
+      return;
     }
+
+    if (!res.ok) {
+      setError("Failed to delete research. Please try again.");
+      return;
+    }
+
+    if (isCurrentresearch) {
+      router.push("/research");
+    }
+
+    router.refresh();
+  } catch {
+    setError("Something went wrong. Please try again.");
+  } finally {
+    setDeletingId(null);
   }
+}
+
 
   return (
     <aside

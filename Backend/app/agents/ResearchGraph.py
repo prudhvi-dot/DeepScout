@@ -32,14 +32,13 @@ planner = Planner
 
 
 def plan_research(state: ResearchState):
-    print("Planning")
+
     plan = Planner(state["query"], state["research_gaps"])
 
     return {"tasks": plan.tasks}
 
 
 def dispatch_research(state: ResearchState):
-    print("Dispatching research")
     return [
         Send(
             "research",
@@ -53,7 +52,6 @@ def dispatch_research(state: ResearchState):
 
 
 def critic_node(state: ResearchState):
-    print("Critiquing")
 
     result = Critic(
         state["query"],
@@ -74,7 +72,6 @@ def route_after_critic(state: ResearchState):
 
 
 def rewrite_query(state: ResearchState):
-    print("Preparing next research iteration")
 
     return {
         "iteration": state["iteration"] + 1,
@@ -82,7 +79,6 @@ def rewrite_query(state: ResearchState):
 
 
 def synthesizer_node(state: ResearchState):
-    print("Synthesizing final report")
 
     report = Synthesizer(
         state["query"],
@@ -93,7 +89,7 @@ def synthesizer_node(state: ResearchState):
 
 
 def research(state):
-    print("Conducting research")
+
     result = researcher_graph.invoke(state)
 
     return {"findings": [result["finding"]]}

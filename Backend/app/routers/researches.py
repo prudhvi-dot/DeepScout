@@ -112,11 +112,22 @@ def research(
                 stream_mode="updates",
             ):
                 for node_name, node_output in chunk.items():
+                    print(node_name)
                     yield (
                         json.dumps(
                             {
                                 "type": "status",
-                                "message": f"Completed step: {node_name}",
+                                "message": (
+                                    "Planning"
+                                    if node_name == "planner"
+                                    else "Dispatching researchers"
+                                    if node_name == "research"
+                                    else "Rewriting query"
+                                    if node_name == "rewrite_query"
+                                    else "Evaluating research"
+                                    if node_name == "critic"
+                                    else node_name
+                                ),
                             }
                         )
                         + "\n"

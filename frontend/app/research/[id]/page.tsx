@@ -1,22 +1,42 @@
 import { cookies } from "next/headers";
 import Research from "@/components/Research";
+import { redirect } from "next/navigation";
 import { BACKEND_URL } from "@/lib/config";
+
 async function getCurrentUser() {
   const cookieStore = await cookies();
+
   const res = await fetch(`${BACKEND_URL}/api/users/me`, {
     headers: { Cookie: cookieStore.toString() },
     cache: "no-store",
   });
+
+  if (res.status === 401) {
+  redirect("/api/logout");
+}
+
   if (!res.ok) return null;
+
   return res.json();
 }
+
 async function getResearch(research_id: string) {
   const cookieStore = await cookies();
-  const res = await fetch(`${BACKEND_URL}/api/researches/${research_id}/report`, {
-    headers: { Cookie: cookieStore.toString() },
-    cache: "no-store",
-  });
+
+  const res = await fetch(
+    `${BACKEND_URL}/api/researches/${research_id}/report`,
+    {
+      headers: { Cookie: cookieStore.toString() },
+      cache: "no-store",
+    }
+  );
+
+  if (res.status === 401) {
+    redirect("/signin");
+  }
+
   if (!res.ok) return "";
+
   const data = await res.json();
 
   return data.report ?? "";

@@ -1,21 +1,32 @@
+
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import {BACKEND_URL} from "@/lib/config";
+import { BACKEND_URL } from "@/lib/config";
 import { SessionSidebar } from "@/components/SessionSidebar";
 
 async function getResearches() {
   const cookieStore = await cookies();
+
   const res = await fetch(`${BACKEND_URL}/api/researches`, {
     headers: { Cookie: cookieStore.toString() },
     cache: "no-store",
   });
-  if (!res.ok) redirect("/signin");
-  const result = await res.json();
-  const chats = result.research_sessions;
 
-  return chats.sort(
+  if (res.status === 401) {
+  redirect("/api/logout");
+}
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch researches");
+  }
+
+  const result = await res.json();
+  const researches = result.research_sessions;
+
+  return researches.sort(
     (a: { created_at: string }, b: { created_at: string }) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      new Date(b.created_at).getTime() -
+      new Date(a.created_at).getTime()
   );
 }
 
@@ -23,11 +34,13 @@ async function getCurrentUser() {
   const cookieStore = await cookies();
 
   const res = await fetch(`${BACKEND_URL}/api/users/me`, {
-    headers: {
-      Cookie: cookieStore.toString(),
-    },
+    headers: { Cookie: cookieStore.toString() },
     cache: "no-store",
   });
+
+  if (res.status === 401) {
+    redirect("/signin");
+  }
 
   if (!res.ok) {
     return null;
@@ -35,6 +48,7 @@ async function getCurrentUser() {
 
   return res.json();
 }
+
 
 export default async function ChatLayout({ children }: { children: React.ReactNode }) {
   const chats = await getResearches();
